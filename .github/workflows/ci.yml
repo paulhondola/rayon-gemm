@@ -2,33 +2,53 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
-
-env:
-  CARGO_TERM_COLOR: always
+    branches: [main]
 
 jobs:
-  build:
+  rust:
+    name: Rust Nightly (Clippy, Format, Test)
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Rust toolchain
-      uses: dtolnay/rust-toolchain@stable
-      with:
-        components: rustfmt, clippy
+      - name: Install Rust nightly toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy, rustfmt
 
-    - name: Check formatting
-      run: cargo fmt --all --check
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: benchmark
 
-    - name: Run Clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Check Formatting
+        run: cargo fmt --manifest-path benchmark/Cargo.toml -- --check
 
-    - name: Build
-      run: cargo build --verbose
+      - name: Run Clippy
+        run: cargo clippy --manifest-path benchmark/Cargo.toml --all-targets --all-features -- -D warnings
 
-    - name: Run tests
-      run: cargo test --verbose
+      - name: Run Tests
+        run: cargo test --manifest-path benchmark/Cargo.toml
+
+  web:
+    name: Web (Lint & Typecheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install --frozen-lockfile
+        working-directory: web
+
+      - name: Biome Lint & Format Check
+        run: bunx @biomejs/biome check src
+        working-directory: web
+
+      - name: TypeScript Typecheck
+        run: bun run typecheck
+        working-directory: web

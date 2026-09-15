@@ -1,24 +1,25 @@
 pre-commit:
   parallel: true
   commands:
-    rustfmt:
+    benchmark-fmt:
+      root: "benchmark/"
       glob: "*.rs"
-      run: cargo fmt --all
-    clippy:
+      run: cargo fmt --manifest-path Cargo.toml
+      stage_fixed: true
+    benchmark-clippy:
+      root: "benchmark/"
       glob: "*.rs"
-      run: cargo clippy --all-targets --all-features -- -D warnings
-    cargo-check:
+      run: cargo clippy --manifest-path Cargo.toml --all-targets --all-features -- -D warnings
+    benchmark-test:
+      root: "benchmark/"
       glob: "*.rs"
-      run: cargo test
-    ruff-check:
-      glob: "*.py"
-      run: uv run --project scripts ruff check --fix
-    ruff-format:
-      glob: "*.py"
-      run: uv run --project scripts ruff format
-    pytest:
-      glob: "*.py"
-      run: uv run --project scripts pytest
+      run: cargo test --manifest-path Cargo.toml
+    frontend-lint:
+      root: "web/"
+      glob: "*.{ts,tsx,js,jsx,json}"
+      run: bunx @biomejs/biome check --write {staged_files}
+      stage_fixed: true
     frontend-typecheck:
-      glob: "frontend/src/**/*.{ts,tsx}"
-      run: npm run --prefix frontend typecheck
+      root: "web/"
+      glob: "*.{ts,tsx}"
+      run: bun run typecheck

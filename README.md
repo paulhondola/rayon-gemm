@@ -54,7 +54,7 @@ The benchmark suite requires **Rust Nightly** because the `f16` primitive type (
 Running without flags performs a full sweep across all default sizes (`64, 128, 256, 512, 1024, 2048`), all CPU kernels and Apple Silicon GPU kernels (`mps` on macOS), and powers-of-two thread counts up to `available_parallelism()` at `f32` precision:
 
 ```sh
-cargo run --release -- --output results.csv
+cargo run --release -- --output results
 ```
 
 ### 2. Targeted Sweeps
@@ -65,7 +65,7 @@ Compare the canonical `naive-ijk`, cache-friendly `ikj`, and cache-blocked `tile
 cargo run --release -- \
   --sizes 128,256,512,1024 \
   --kernel naive,ikj,tiled \
-  --output cache_comparison.csv
+  --output cache_comparison
 ```
 
 #### Parallel Scaling Sweep
@@ -76,7 +76,7 @@ cargo run --release -- \
   --threads 1,2,4,8,10 \
   --kernel rayon-ikj,static-ikj \
   --repetitions 5 \
-  --output parallel_scaling.csv
+  --output parallel_scaling
 ```
 
 #### Multi-Precision Sweep (`f16`, `f32`, `f64`)
@@ -86,7 +86,7 @@ cargo run --release -- \
   --sizes 512,1024 \
   --kernel ikj,rayon-ikj \
   --precision f16,f32,f64 \
-  --output precisions.csv
+  --output precisions
 ```
 
 #### Headless / CI Execution (No Progress Bar)
@@ -96,7 +96,7 @@ cargo run --release -- \
   --sizes 256,512 \
   --kernel ikj,rayon-ikj \
   --no-progress \
-  --output results.json
+  --output results
 ```
 
 #### Apple Silicon GPU (MPS Native GEMM)
@@ -106,7 +106,7 @@ cargo run --release -- \
   --sizes 256,512,1024,2048 \
   --kernel mps \
   --precision f16,f32 \
-  --output mps_results.csv
+  --output mps_results
 ```
 
 ---
@@ -122,7 +122,7 @@ cargo run --release -- \
 | `--repetitions <R>` | Timed iterations measured per configuration (mean is recorded) | `1` |
 | `--block-size <B>` | Tile edge length for blocked kernels | `64` |
 | `--no-progress` | Disables the interactive `indicatif` progress bar | `false` |
-| `--output <PATH>` | **(Required)** Path for output (`.csv` or `.json`) | — |
+| `--output <PREFIX>` | **(Required)** Path prefix without extension (outputs both `.csv` and `.json`) | — |
 
 ---
 
@@ -131,7 +131,7 @@ cargo run --release -- \
 1. **Warmup Run**: Every configuration executes one untimed warmup pass prior to measurement, isolating thread pool initialization, cold caches, and dynamic loader overhead from the recorded metrics.
 2. **Work Validation**: `static-ikj` and `static-tiled` require at least one matrix row per worker thread; thread counts exceeding the matrix dimension $N$ are rejected upfront.
 3. **Structured Export**:
-   - The `--output` file extension automatically selects the format: `.csv` or `.json`.
+   - The `--output` destination prefix (e.g. `data/f16` or `results`) automatically writes both `.csv` and `.json` files to avoid rerunning benchmarks for different formats.
    - Columns: `kernel, n, threads, precision, elapsed_ms, gflops`.
 
 ---
